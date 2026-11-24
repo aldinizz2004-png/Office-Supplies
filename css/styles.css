@@ -1,0 +1,42 @@
+.messages {
+  min-height: 0;
+}
+
+.stat-card {
+  border-left: 4px solid #0d6efd;
+}
+
+.stat-warning {
+  border-left-color: #ffc107;
+}
+
+.stat-danger {
+  border-left-color: #dc3545;
+}
+
+.qty-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qty-value {
+  min-width: 2rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.form-card {
+  position: sticky;
+  top: 1rem;
+}
+
+@media (max-width: 991.98px) {
+  .form-card {
+    position: static;
+  }
+}
+
+.table-responsive {
+  position: relative;
+}
