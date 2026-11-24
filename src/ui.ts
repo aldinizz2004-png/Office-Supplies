@@ -4,6 +4,7 @@ import type {
   FieldErrors,
   FieldName,
   MessageKind,
+  Stock,
   Summary,
   Supply,
   SupplyDraft,
@@ -31,6 +32,8 @@ export const elements = {
   statLow: byId<HTMLElement>('statLow'),
   statOut: byId<HTMLElement>('statOut'),
   statCategories: byId<HTMLElement>('statCategories'),
+  restockList: byId<HTMLUListElement>('restockList'),
+  restockCount: byId<HTMLElement>('restockCount'),
 };
 
 const fields: Record<FieldName | 'supplier' | 'notes', HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> = {
@@ -68,54 +71,92 @@ export const populateSelects = (): void => {
 
 const statusHtml = (supply: Supply): string => {
   const status = getStatus(supply.stock);
-  if (status === 'out') return '<span class="badge text-bg-danger">Out of stock</span>';
-  if (status === 'low') {
-    return `<span class="badge text-bg-warning">Low stock</span>
-      <small class="d-block text-danger-emphasis">Needs ${shortfall(supply.stock)} more</small>`;
-  }
-  return '<span class="badge text-bg-success">In stock</span>';
+  if (status === 'out') return '<span class="status status-out">Out of stock</span>';
+  if (status === 'low') return '<span class="status status-low">Low stock</span>';
+  return '<span class="status status-ok">In stock</span>';
 };
+
+const editIcon =
+  '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.5 3.5l3 3L7 16H4v-3z"/><path d="M11.5 5.5l3 3"/></svg>';
+const deleteIcon =
+  '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12"/><path d="M8 6V4h4v2"/><path d="M5.5 6l.8 10h7.4l.8-10"/></svg>';
+
+const stockLevel = ({ quantity, minimum }: Stock): number =>
+  minimum === 0 ? 100 : Math.min(100, Math.round((quantity / (minimum * 2)) * 100));
 
 const rowHtml = (supply: Supply): string => {
   const { id, name, category, stock, supplier } = supply;
   const label = escapeHtml(name);
-  const rowClass = getStatus(stock) === 'ok' ? '' : 'table-warning';
+  const status = getStatus(stock);
   return `
-    <tr class="${rowClass}">
+    <tr class="row-${status}">
       <td>
-        <strong>${label}</strong>
-        ${supplier ? `<small class="d-block text-secondary">${escapeHtml(supplier.name)}</small>` : ''}
+        <span class="item-name">${label}</span>
+        ${supplier ? `<span class="item-meta">${escapeHtml(supplier.name)}</span>` : ''}
       </td>
-      <td>${category}</td>
+      <td><span class="cat cat-${category.toLowerCase()}">${category}</span></td>
       <td>
-        <div class="qty-control">
-          <button type="button" class="btn btn-outline-secondary btn-sm" data-action="decrease" data-id="${id}"
-            aria-label="Decrease quantity of ${label}" ${stock.quantity === 0 ? 'disabled' : ''}>-</button>
-          <span class="qty-value" aria-label="Quantity of ${label}">${stock.quantity}</span>
-          <button type="button" class="btn btn-outline-secondary btn-sm" data-action="increase" data-id="${id}"
-            aria-label="Increase quantity of ${label}">+</button>
+        <div class="d-flex align-items-center">
+          <div class="stepper">
+            <button type="button" data-action="decrease" data-id="${id}"
+              aria-label="Decrease quantity of ${label}" ${stock.quantity === 0 ? 'disabled' : ''}>&minus;</button>
+            <output aria-label="Quantity of ${label}">${stock.quantity}</output>
+            <button type="button" data-action="increase" data-id="${id}"
+              aria-label="Increase quantity of ${label}">+</button>
+          </div>
+          <span class="unit">${stock.unit}</span>
         </div>
+        <div class="level level-${status}" aria-hidden="true"><span style="width: ${stockLevel(stock)}%"></span></div>
       </td>
-      <td>${stock.unit}</td>
-      <td>${stock.minimum}</td>
+      <td>${stock.minimum} <span class="unit ms-0">${stock.unit}</span></td>
       <td>${statusHtml(supply)}</td>
-      <td class="text-end text-nowrap">
-        <button type="button" class="btn btn-outline-primary btn-sm" data-action="edit" data-id="${id}"
-          aria-label="Edit ${label}">Edit</button>
-        <button type="button" class="btn btn-outline-danger btn-sm" data-action="delete" data-id="${id}"
-          aria-label="Delete ${label}">Delete</button>
+      <td class="text-end">
+        <div class="row-actions">
+          <button type="button" class="icon-btn" data-action="edit" data-id="${id}"
+            aria-label="Edit ${label}" title="Edit">${editIcon}</button>
+          <button type="button" class="icon-btn icon-btn-danger" data-action="delete" data-id="${id}"
+            aria-label="Delete ${label}" title="Delete">${deleteIcon}</button>
+        </div>
       </td>
     </tr>`;
 };
 
+const restockItemHtml = (supply: Supply): string => {
+  const { id, name, stock } = supply;
+  const label = escapeHtml(name);
+  const missing = shortfall(stock);
+  const note =
+    stock.quantity === 0
+      ? `<span class="out">Out of stock</span>, buy ${missing} ${stock.unit}`
+      : `<span>${stock.quantity} left, buy ${missing} ${stock.unit}</span>`;
+  return `
+    <li>
+      <div class="shopping-item">
+        <strong>${label}</strong>
+        <span>${note}</span>
+      </div>
+      <button type="button" class="btn-restock" data-action="restock" data-id="${id}"
+        aria-label="Restock ${label} to ${stock.minimum} ${stock.unit}">Restock</button>
+    </li>`;
+};
+
+export const renderRestock = (items: readonly Supply[]): void => {
+  elements.restockCount.textContent = String(items.length);
+  elements.restockList.innerHTML =
+    items.length === 0
+      ? '<li class="shopping-empty">Everything is above its minimum. Nothing to buy.</li>'
+      : items.map(restockItemHtml).join('');
+};
+
 const messageRow = (text: string, extra = ''): string =>
-  `<tr><td colspan="7" class="text-center text-secondary py-4">${text}${extra}</td></tr>`;
+  `<tr><td colspan="6" class="empty-row">${text}${extra}</td></tr>`;
 
 export const renderSupplies = (visible: readonly Supply[], total: number): void => {
-  elements.count.textContent = `Showing ${visible.length} of ${total} items`;
+  elements.count.textContent =
+    visible.length === total ? `${total} items` : `${visible.length} of ${total} items`;
   if (visible.length === 0) {
     elements.body.innerHTML = messageRow(
-      total === 0 ? 'No supplies yet. Add the first item using the form.' : 'No items match your filters.',
+      total === 0 ? 'No supplies yet. Add the first item using the form.' : 'No items match these filters.',
     );
     return;
   }
@@ -132,8 +173,8 @@ export const showLoading = (): void => {
 export const showLoadError = (message: string): void => {
   elements.count.textContent = '';
   elements.body.innerHTML = messageRow(
-    `<span class="text-danger d-block mb-2" role="alert">${escapeHtml(message)}</span>`,
-    '<button type="button" class="btn btn-outline-primary btn-sm" data-action="retry">Try again</button>',
+    `<span class="d-block mb-2 text-danger" role="alert">${escapeHtml(message)}</span>`,
+    '<button type="button" class="btn-restock" data-action="retry">Try again</button>',
   );
 };
 
@@ -149,7 +190,7 @@ let messageTimer: number | undefined;
 export const showMessage = (text: string, kind: MessageKind = 'success'): void => {
   window.clearTimeout(messageTimer);
   const alert = document.createElement('div');
-  alert.className = `alert alert-${kind} py-2 mb-3`;
+  alert.className = kind === 'danger' ? 'toast-msg toast-danger' : 'toast-msg';
   alert.setAttribute('role', kind === 'danger' ? 'alert' : 'status');
   alert.textContent = text;
   elements.messages.replaceChildren(alert);

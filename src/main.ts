@@ -6,7 +6,15 @@ import {
   updateStock,
   updateSupply,
 } from './api.js';
-import { changeQuantity, filterSupplies, isCategory, parseDraft, summarize } from './supplies.js';
+import {
+  changeQuantity,
+  filterSupplies,
+  isCategory,
+  needsRestock,
+  parseDraft,
+  shortfall,
+  summarize,
+} from './supplies.js';
 import type { Supply, SupplyFilters } from './types.js';
 import * as ui from './ui.js';
 
@@ -29,6 +37,11 @@ const errorText = (error: unknown): string =>
 
 const render = (): void => {
   ui.renderSummary(summarize(state.supplies));
+  ui.renderRestock(
+    state.supplies
+      .filter(needsRestock)
+      .sort((a, b) => a.stock.quantity - b.stock.quantity || shortfall(b.stock) - shortfall(a.stock)),
+  );
   ui.renderSupplies(filterSupplies(state.supplies, state.filters), state.supplies.length);
 };
 
@@ -83,18 +96,25 @@ async function handleSubmit(event: SubmitEvent): Promise<void> {
   }
 }
 
-async function adjustQuantity(supply: Supply, delta: number): Promise<void> {
-  if (state.pending.has(supply.id)) return;
+async function adjustQuantity(supply: Supply, delta: number): Promise<boolean> {
+  if (state.pending.has(supply.id)) return false;
   state.pending.add(supply.id);
   try {
     const updated = await updateStock(supply.id, changeQuantity(supply.stock, delta));
     replaceSupply(updated);
     render();
+    return true;
   } catch (error) {
     ui.showMessage(errorText(error), 'danger');
+    return false;
   } finally {
     state.pending.delete(supply.id);
   }
+}
+
+async function restockSupply(supply: Supply): Promise<void> {
+  const done = await adjustQuantity(supply, shortfall(supply.stock));
+  if (done) ui.showMessage(`${supply.name} restocked to ${supply.stock.minimum} ${supply.stock.unit}.`);
 }
 
 async function removeSupply(supply: Supply): Promise<void> {
@@ -130,6 +150,9 @@ function handleTableClick(event: MouseEvent): void {
       break;
     case 'decrease':
       void adjustQuantity(supply, -1);
+      break;
+    case 'restock':
+      void restockSupply(supply);
       break;
     case 'edit':
       state.editingId = supply.id;
@@ -171,8 +194,13 @@ const init = (): void => {
   ui.populateSelects();
   bindFilters();
   ui.elements.body.addEventListener('click', handleTableClick);
+  ui.elements.restockList.addEventListener('click', handleTableClick);
   ui.elements.form.addEventListener('submit', (event) => void handleSubmit(event));
   ui.elements.cancel.addEventListener('click', stopEditing);
+  ui.elements.addItem.addEventListener('click', () => {
+    stopEditing();
+    ui.focusForm();
+  });
   void loadSupplies();
 };
 
