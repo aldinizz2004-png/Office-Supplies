@@ -1,0 +1,152 @@
+{
+  "supplies": [
+    {
+      "id": 1,
+      "name": "Tea Bags",
+      "category": "Beverages",
+      "stock": {
+        "quantity": 6,
+        "minimum": 10,
+        "unit": "box"
+      },
+      "supplier": {
+        "name": "Main Office Store"
+      }
+    },
+    {
+      "id": 2,
+      "name": "Coffee",
+      "category": "Beverages",
+      "stock": {
+        "quantity": 3,
+        "minimum": 5,
+        "unit": "pack"
+      },
+      "supplier": {
+        "name": "Main Office Store"
+      },
+      "notes": "Medium roast"
+    },
+    {
+      "id": 3,
+      "name": "Sugar",
+      "category": "Food",
+      "stock": {
+        "quantity": 12,
+        "minimum": 5,
+        "unit": "pack"
+      }
+    },
+    {
+      "id": 4,
+      "name": "Bottled Water",
+      "category": "Beverages",
+      "stock": {
+        "quantity": 48,
+        "minimum": 24,
+        "unit": "bottle"
+      }
+    },
+    {
+      "id": 5,
+      "name": "A4 Paper",
+      "category": "Stationery",
+      "stock": {
+        "quantity": 8,
+        "minimum": 10,
+        "unit": "box"
+      },
+      "notes": "Used by the shared printer"
+    },
+    {
+      "id": 6,
+      "name": "Blue Pens",
+      "category": "Stationery",
+      "stock": {
+        "quantity": 30,
+        "minimum": 20,
+        "unit": "piece"
+      }
+    },
+    {
+      "id": 7,
+      "name": "Black Markers",
+      "category": "Stationery",
+      "stock": {
+        "quantity": 0,
+        "minimum": 6,
+        "unit": "piece"
+      }
+    },
+    {
+      "id": 8,
+      "name": "Sticky Notes",
+      "category": "Stationery",
+      "stock": {
+        "quantity": 14,
+        "minimum": 10,
+        "unit": "pack"
+      }
+    },
+    {
+      "id": 9,
+      "name": "Hand Soap",
+      "category": "Cleaning",
+      "stock": {
+        "quantity": 4,
+        "minimum": 3,
+        "unit": "bottle"
+      }
+    },
+    {
+      "id": 10,
+      "name": "Paper Towels",
+      "category": "Cleaning",
+      "stock": {
+        "quantity": 5,
+        "minimum": 8,
+        "unit": "roll"
+      }
+    },
+    {
+      "id": 11,
+      "name": "Disposable Cups",
+      "category": "Food",
+      "stock": {
+        "quantity": 2,
+        "minimum": 6,
+        "unit": "pack"
+      }
+    },
+    {
+      "id": 12,
+      "name": "Stapler Pins",
+      "category": "Stationery",
+      "stock": {
+        "quantity": 9,
+        "minimum": 4,
+        "unit": "box"
+      }
+    },
+    {
+      "id": 13,
+      "name": "Coffee Creamer",
+      "category": "Food",
+      "stock": {
+        "quantity": 7,
+        "minimum": 4,
+        "unit": "pack"
+      }
+    },
+    {
+      "id": 14,
+      "name": "Trash Bags",
+      "category": "Cleaning",
+      "stock": {
+        "quantity": 11,
+        "minimum": 5,
+        "unit": "roll"
+      }
+    }
+  ]
+}
